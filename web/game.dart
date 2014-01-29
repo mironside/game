@@ -7,8 +7,8 @@ RenderingContext gl;
 int posAttr;
 
 List<List<int>> map = [
- [1, 2, 0, 2, 4, 0, 0, 0],
- [3, 1, 0, 2, 4, 0, 0, 0],
+ [4, 2, 0, 2, 4, 0, 0, 0],
+ [3, 1, 1, 2, 4, 0, 0, 0],
  [0, 0, 0, 2, 1, 1, 4, 0],
  [0, 0, 0, 0, 1, 1, 1, 1],
  [0, 0, 0, 0, 1, 1, 1, 1],
@@ -322,39 +322,37 @@ void main() {
   var mvMatrix;
   
   // need to iterate in diamond rows
-//  for(int y = 0; y < map.length; y++) {
-//    for(int x = 0; x < map[y].length; x++) {
-  for(int y = 0; y < 2; y++) {
-    for(int x = 0; x < 2; x++) {
+  for(int y = 0; y < map.length; y++) {
+    for(int x = 0; x < map[y].length; x++) {
       if(map[y][x] == 0)
         continue;
 
       //mvMatrix = makeViewMatrix((x - map[y].length / 2 + 0.5).toDouble() * 64.0, (y - map.length / 2 + 0.5).toDouble() * 64.0);
-      mvMatrix = makeViewMatrix(x.toDouble()*64.0, y.toDouble()*64.0);
+      mvMatrix = makeViewMatrix(x.toDouble()*64.0-128.0, y.toDouble()*64.0);
       
       bool leftWall = (y-1 < 0 || map[y-1][x] == 0);
       bool rightWall = (x+1 >= map[y].length || map[y][x+1] == 0);
 
       if(leftWall && rightWall) {
-        gl.uniform4fv(color, new Float32List.fromList(modulate(colors[map[y][x]], 0.8)));
+        gl.uniform4fv(color, new Float32List.fromList(colors[map[y][x]]));
         gl.uniform4fv(ambientOcclusion, new Float32List.fromList([1.0,1.0,1.0,0.0]));
         gl.uniformMatrix4fv(mvMatrixUniform, false, new Float32List.fromList(mvMatrix));
         drawCorner();
       }
       else if(leftWall) {
-        gl.uniform4fv(color, new Float32List.fromList(modulate(colors[map[y][x]], 0.8)));
+        gl.uniform4fv(color, new Float32List.fromList(colors[map[y][x]]));
         gl.uniform4fv(ambientOcclusion, new Float32List.fromList([1.0,0.0,1.0,0.0]));
         gl.uniformMatrix4fv(mvMatrixUniform, false, new Float32List.fromList(mvMatrix));
         drawLeftWall();
       }
       else if(rightWall) {
-        gl.uniform4fv(color, new Float32List.fromList(modulate(colors[map[y][x]], 0.65)));
+        gl.uniform4fv(color, new Float32List.fromList(colors[map[y][x]]));
         gl.uniform4fv(ambientOcclusion, new Float32List.fromList([0.0,1.0,1.0,0.0]));
         gl.uniformMatrix4fv(mvMatrixUniform, false, new Float32List.fromList(mvMatrix));
         drawRightWall();
       }
       else {
-        gl.uniform4fv(color, new Float32List.fromList(modulate(colors[map[y][x]], 1.0)));
+        gl.uniform4fv(color, new Float32List.fromList(colors[map[y][x]]));
         gl.uniform4fv(ambientOcclusion, new Float32List.fromList([0.0,0.0,1.0,0.0]));
         gl.uniformMatrix4fv(mvMatrixUniform, false, new Float32List.fromList(mvMatrix));
         drawGround();

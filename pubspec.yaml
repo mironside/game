@@ -1,0 +1,8 @@
+name: game
+description: A sample web application
+dependencies:
+  browser: any
+  polymer: any
+transformers:
+- polymer:
+    entry_points: web/index.html

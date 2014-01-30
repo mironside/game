@@ -7,7 +7,7 @@ RenderingContext gl;
 int posAttr;
 
 List<List<int>> map = [
- [4, 2, 0, 2, 4, 0, 0, 0],
+ [1, 2, 0, 2, 4, 0, 0, 0],
  [3, 1, 1, 2, 4, 0, 0, 0],
  [0, 0, 0, 2, 1, 1, 4, 0],
  [0, 0, 0, 0, 1, 1, 1, 1],
@@ -270,19 +270,31 @@ void main() {
     #define M_PI 3.1415926535897932384626433832795
     precision highp float;
     uniform vec4 color;
-    uniform vec4 ambientOcclusion;  // occlusion factor for each dimension.
+    uniform vec4 ambientOcclusion;  // occlusion factor for x,y,z,xy dimensions
     varying vec3 position;
 
+
     void main(void) {
+      float ao_distance = 64.0;
+      float ao_power = 1.25;
+      vec4 pos = vec4(
+        (-position.x+32.0)/ao_distance,
+        (position.y+32.0)/ao_distance,
+        (position.z)/ao_distance,
+        sqrt(pow((position.x-32.0), 2.0) + pow((position.y+32.0), 2.0))/ao_distance
+      );
+      pos = clamp(pos, 0.0, 1.0);
+
       vec4 ao = vec4(
-        0.5 * (1.0 + sin((position.y+32.0)/64.0 * M_PI / 2.0)),
-        0.5 * (1.0 + sin((-position.x+32.0)/64.0 * M_PI / 2.0)),
-        (1.0 + sin((position.z)/(1.62*32.0) * M_PI / 2.0)),
-        1.0);
+        0.5 * sin(pos.y * M_PI / 2.0) + 0.5,
+        0.5 * sin(pos.x * M_PI / 2.0) + 0.5,
+        1.0 * sin(pos.z * M_PI / 2.0) + 1.0,
+        0.5 * sin(pos.w * M_PI / 2.0) + 0.5
+        );
+
       ao = mix(vec4(1.0), ao, ambientOcclusion);
-      ao = pow(ao, vec4(1.25));
-      //gl_FragColor = color * vec4(vec3(mix(1.0, pow(ao.x, 1.2), ambientOcclusion.x)*mix(1.0, pow(ao.y, 1.2), ambientOcclusion.y)), 1.0);
-      gl_FragColor = color * vec4(vec3(ao.x*ao.y*ao.z), 1.0);
+      ao = pow(ao, vec4(ao_power));
+      gl_FragColor = color * vec4(mix(vec3(ao.x*ao.y*ao.z), vec3(ao.w), ambientOcclusion.w), 1.0);
     }
   """);
   gl.compileShader(fs);
@@ -332,6 +344,7 @@ void main() {
       
       bool leftWall = (y-1 < 0 || map[y-1][x] == 0);
       bool rightWall = (x+1 >= map[y].length || map[y][x+1] == 0);
+      bool topWall = (y-1 < 0 || x+1 >= map[y].length || map[y-1][x+1] == 0);
 
       if(leftWall && rightWall) {
         gl.uniform4fv(color, new Float32List.fromList(colors[map[y][x]]));
@@ -353,7 +366,12 @@ void main() {
       }
       else {
         gl.uniform4fv(color, new Float32List.fromList(colors[map[y][x]]));
-        gl.uniform4fv(ambientOcclusion, new Float32List.fromList([0.0,0.0,1.0,0.0]));
+        if(topWall) {
+          gl.uniform4fv(ambientOcclusion, new Float32List.fromList([0.0,0.0,0.0,1.0]));
+        }
+        else {
+          gl.uniform4fv(ambientOcclusion, new Float32List.fromList([0.0,0.0,0.0,0.0]));
+        }
         gl.uniformMatrix4fv(mvMatrixUniform, false, new Float32List.fromList(mvMatrix));
         drawGround();
       }
